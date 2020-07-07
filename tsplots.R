@@ -22,8 +22,16 @@ plot_start = function(data, year, month, cap){
 
 
 # event plot function
-event = function(data, var_name, level = 'levels', year,
-                 month, event_year, event_month, event_label){
+event = function(data, var_name, 
+                 level = 'levels', date, event_date, event_label){
+  year = as.numeric(substr(date,nchar(date)-4, nchar(date)))
+  st_month = as.character(substr(date, 1, 3))
+  month = as.numeric(ifelse(match(st_month, month.abb)<10, 
+                            paste0('0',match(st_month, month.abb)), match(st_month, month.abb)))
+  event_year = as.numeric(substr(event_date, nchar(event_date)-4, nchar(event_date)))
+  ev_month = as.character(substr(event_date, 1, 3))
+  event_month = as.numeric(ifelse(match(ev_month, month.abb)<10, 
+                                  paste0('0',match(ev_month, month.abb)), match(ev_month, month.abb)))
   CapStr <- function(y) {
     c <- strsplit(y, " ")[[1]]
     paste(toupper(substring(c, 1,1)), substring(c, 2),
@@ -31,11 +39,13 @@ event = function(data, var_name, level = 'levels', year,
   }
   if(level == 'levels'){
     plot_start(data[, var_name], year, month, paste0(CapStr(names(data)),' (Nivel)'))
-    addEventLines(events = xts(c(event_label),  order.by = as.Date(c(paste0(event_year,'-',event_month,'-','01')))),
+    addEventLines(events = xts(c(event_label),  
+                               order.by = as.Date(c(paste0(event_year,'-',event_month,'-','01')))),
                   lty = 2, col = 'red', lwd = 3, on = 0, pos=3)
   } else if(level == 'first_diff'){
     plot_start(diff(data[, var_name]), year, month, paste0(CapStr(names(data)),' (Primera Diferencia)'))
-    addEventLines(events = xts(c(event_label), order.by = as.Date(c(paste0(event_year,'-',event_month,'-','01')))),
+    addEventLines(events = xts(c(event_label), 
+                               order.by = as.Date(c(paste0(event_year,'-',event_month,'-','01')))),
                   lty = 2, col = 'red', lwd = 3, on = 0, pos=3)
   }
 }
