@@ -31,17 +31,21 @@ xts_yearmon = function(file_name, dir, var_name, yearmon=F){
     ed <- as.POSIXlt(end_date)
     sd <- as.POSIXlt(start_date)
     12 * (ed$year - sd$year) + (ed$mon - sd$mon)
-  if(yearmon == T){
+  }
+  freq = length(date)
+  elapsedm = abs(elapsed_months(start_year, start_month, end_year, end_month))
+    if(yearmon == T){
       data = xts(data[(nrow(data)-elapsedm):nrow(data), var_name], 
                  order.by = as.yearmon(index(ts(data[(nrow(data)-elapsedm):nrow(data), var_name], 
                                                 start = c(start_year,start_month), end = c(end_year, end_month),
                                                 frequency = freq))), frequency = freq)
+      names(data) = var_name
       return(data)
     } else { 
       datat = xts(data[(nrow(data)-elapsedm):nrow(data), var_name], 
                   order.by = seq(as.Date(paste0(start_year,'-',start_month,'-','01')),
                                  length = elapsedm+1,
                                  by = "months"), frequency = freq)
-      return(datat)
-    }}
+      return(datat) = var_name
+    }
 }
