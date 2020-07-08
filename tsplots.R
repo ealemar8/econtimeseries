@@ -1,12 +1,21 @@
 
 
+
+
 # function to generate level and difference plot of an xts series
-graph_diflev = function(data, periods_back, var_name, country){
+graph_diflev = function(data, start_date, var_name, country){
+  start_year = as.numeric(substr(start_date,
+             nchar(start_date)-4, nchar(start_date)))
+  st_month = as.character(substr(start_date, 1, 3))
+  start_month = as.numeric(ifelse(match(st_month, month.abb)<10, 
+          paste0('0',match(st_month, month.abb)), match(st_month, month.abb)))
   par(mfrow = c(2,1))
-  data$line = mean(data[(nrow(data)-periods_back):nrow(data), ])
-  p= plot(data[(nrow(data)-periods_back):nrow(data), ], 
+  start_index = which(as.yearmon(index(data))
+          == as.yearmon(paste0(start_year,'-', start_month)))
+  data$line = mean(data[start_index:nrow(data), ])
+  p= plot(data[start_index:nrow(data), ], 
           main = paste(var_name,'en', country, '(Nivel)'))
-  pd = plot(diff(log(data[(nrow(data)-periods_back):nrow(data), ])), 
+  pd = plot(diff(log(data[start_index:nrow(data), ])), 
             main = paste(var_name,'en', country, '(Cambio %)'))
   return(c(p, pd))
 }
@@ -20,10 +29,14 @@ plot_start = function(data, year, month, cap){
   p
 }
 
-
 # event plot function
 event = function(data, var_name, 
                  level = 'levels', date, event_date, event_label){
+  plot_start = function(data, year, month, cap){
+    pldata = na.omit(data[which(index(data)==paste0(year,'-',month,'-','01')):nrow(data), ])
+    p = plot.xts(pldata, main = cap)
+    p
+  }
   year = as.numeric(substr(date,nchar(date)-4, nchar(date)))
   st_month = as.character(substr(date, 1, 3))
   month = as.numeric(ifelse(match(st_month, month.abb)<10, 
@@ -51,7 +64,7 @@ event = function(data, var_name,
 }
 
 
-# acf / pacf
+# acf / pacf of xts object
 acfs = function(data, dif='levels', lagmax){
   if(dif=='levels'){
     par(mfrow=c(2,1))
@@ -70,6 +83,28 @@ acfs = function(data, dif='levels', lagmax){
   }
 }
 
+#distribution and acf
+distacf = function(data, var_name, dif='levels', lagmax){
+  if(dif=='levels'){
+    par(mfrow=c(2,1))
+    a=acf(data, lag.max = lagmax, plot = F)
+    plot(a, main = paste0('ACF of ', var_name, ' (Levels)'))
+    hist(as.numeric(data), probability = T, 
+         main = paste0('Histogram of ', var_name))
+    lines(density(as.numeric(data)), col='red')
+  } else if(dif=='first_diff'){
+    par(mfrow=c(2,1))
+    difdat=na.omit(diff(data))
+    pa=acf(difdat, lag.max = lagmax, plot = F)
+    plot(pa, main = paste0('ACF of ',
+          var_name,' (First Difference)'), xlab='')
+    hist(as.numeric(difdat), probability = T,
+         main = paste0('Histogram of ',
+        var_name,' (First Difference)'), xlab='')
+    lines(density(as.numeric(difdat)), col='red')
+  }
+}
+
 # fitted vs actual plot
 fitted_actual = function(data, mod, start_date, 
                          end_date, cap = 'Fitted vs Actual'){
@@ -85,7 +120,7 @@ fitted_actual = function(data, mod, start_date,
                                paste0('0',match(nd_month, month.abb)), match(nd_month, month.abb)))
   fitt=ts(fitted(mod)[which(as.yearmon(index(data))==start_date):nrow(data)],
           start = c(st_year, st_month), end = c(nd_year, nd_month), frequency = 12)
-  p=plot(fitt, type = 'l', ylab='', xaxt='n', main = cap, lwd=2, pch=10)
+  p=plot(fitt, type = 'l', ylab='', xaxt='n', main = cap, lwd=2, pch=15)
   tsp = attributes(fitt)$tsp
   dates = seq(as.Date(paste0(st_year,'-','0',st_month,'-','01'),
                       format='%Y-%m-%d'), by = "month", along = fitt)
@@ -95,7 +130,9 @@ fitted_actual = function(data, mod, start_date,
   lines(ts(data[which(as.yearmon(index(data))==start_date):nrow(data), ],
            start = c(st_year, st_month),
            end = c(nd_year, nd_month), frequency = 12),
-        col = 'red', lwd=2, pch=10)
+        col = 'red', lwd=2, pch=18)
   legend("bottomleft", legend = c("Fitted", "Actual"),
-         col = c('black', 'red'), lty=c(1,1), seg.len=1, lwd=4, pch=10)
+         col = c('black', 'red'), lty=c(1,1), seg.len=1, lwd=4, pch=15)
 }
+
+
