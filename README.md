@@ -4,6 +4,14 @@ Repository of time series functions in R for exploratory and predictive analysis
 
 
 ```{r pac, include=F, echo=T}
-require(xts)
-require(readxl)
+# Variables related to your last day of recordings
+medium <- "LinkedIn"
+num_views <- 14
+
+# Control structure for medium
+if (medium == "LinkedIn") {
+  print("Showing LinkedIn information")
+} else {
+  print("Unknown medium")
+}
 ```
