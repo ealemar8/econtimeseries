@@ -4,7 +4,9 @@
 # (want to reshape big year month matrix to long dataframe of two columns: 
 # one for month-year and one for the observation)
 
-xts_yearmon = function(dataa, var_name, yearmon=F){
+xts_yearmon = function(file_name, dir, var_name, yearmon=F, yearq=F){
+  setwd(paste0("~/", dir))
+  dataa = read_excel(paste0('~/', dir, '/', file_name, '.xlsx'))
   date = c('Jul', 'Aug', 'Sep', 'Oct', 'Nov',
            'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun')
   dataa$Meses = date
