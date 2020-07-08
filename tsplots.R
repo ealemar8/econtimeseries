@@ -2,6 +2,7 @@
 
 
 
+
 # function to generate level and difference plot of an xts series
 graph_diflev = function(data, start_date, var_name, country){
   start_year = as.numeric(substr(start_date,
@@ -22,10 +23,14 @@ graph_diflev = function(data, start_date, var_name, country){
 
 # function for graphing from particular period to last pbservation 
 # (year and month provided in numbers)
-plot_start = function(data, year, month, cap){
+plot_start = function(data, date, cap, linecol){
+  year = as.numeric(substr(date,nchar(date)-4, nchar(date)))
+  st_month = as.character(substr(date, 1, 3))
+  month = as.numeric(ifelse(match(st_month, month.abb)<10, 
+      paste0('0',match(st_month, month.abb)), match(st_month, month.abb)))
   par(mfrow=c(1,1))
   pldata = na.omit(data[which(index(data)==paste0(year,'-',month,'-','01')):nrow(data), ])
-  p = plot.xts(pldata, main = cap)
+  p = plot.xts(pldata, main = cap, col = linecol)
   p
 }
 
