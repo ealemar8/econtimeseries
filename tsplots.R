@@ -1,29 +1,40 @@
 
 
-
-
-
 # function to generate level and difference plot of an xts series
 graph_diflev = function(data, start_date, var_name, country){
   start_year = as.numeric(substr(start_date,
-             nchar(start_date)-4, nchar(start_date)))
+                                 nchar(start_date)-4, nchar(start_date)))
   st_month = as.character(substr(start_date, 1, 3))
   start_month = as.numeric(ifelse(match(st_month, month.abb)<10, 
-          paste0('0',match(st_month, month.abb)), match(st_month, month.abb)))
+                                  paste0('0',match(st_month, month.abb)), match(st_month, month.abb)))
   par(mfrow = c(2,1))
-  start_index = which(as.yearmon(index(data))
-          == as.yearmon(paste0(start_year,'-', start_month)))
-  data$line = mean(data[start_index:nrow(data), ])
-  p= plot(data[start_index:nrow(data), ], 
-          main = paste(var_name,'en', country, '(Nivel)'))
-  pd = plot(diff(log(data[start_index:nrow(data), ])), 
-            main = paste(var_name,'en', country, '(Cambio %)'))
+  if(class(index(data))=='yearmon'){
+    start_index = which(as.yearmon(index(data))
+                        == as.yearmon(paste0(start_year,'-', start_month)))
+    trend = 1:nrow(data)
+    data$line = fitted(lm(data ~ trend))
+    p= plot(data[start_index:nrow(data), ], 
+            main = paste(var_name,'en', country, '(Nivel)'))
+    pd = plot(diff(log(data[start_index:nrow(data), ])), 
+              main = paste(var_name,'en', country, '(Cambio %)'))
+  } else {
+    start_index = which(index(data)
+                        == paste0(start_year,'-', start_month, '-', '01'))
+    trend = 1:nrow(data)
+    data$line = fitted(lm(data ~ trend))
+    p= plot(data[start_index:nrow(data), ], 
+            main = paste(var_name,'en', country, '(Nivel)'))
+    pd = plot(diff(log(data[start_index:nrow(data), ])), 
+              main = paste(var_name,'en', country, '(Cambio %)'))
+  }
   return(c(p, pd))
 }
 
+graph_diflev(data = empleo_xts, start_date = 'Jul 2017', country = 'Puerto Rico')
+
 # function for graphing from particular period to last pbservation 
 # (year and month provided in numbers)
-plot_start = function(data, date, cap, linecol){
+plot_start = function(data, date, cap, linecol='black'){
   year = as.numeric(substr(date,nchar(date)-4, nchar(date)))
   st_month = as.character(substr(date, 1, 3))
   month = as.numeric(ifelse(match(st_month, month.abb)<10, 
@@ -35,10 +46,11 @@ plot_start = function(data, date, cap, linecol){
 }
 
 # event plot function
-event = function(data, var_name, 
-                 level = 'levels', date, event_date, event_label){
+event = function(data, var_name = names(data), 
+                 level = 'levels', date, event_date, event_label,
+                 ltyy=2, coll='red', lwdd = 3, onn = 0, poss=3){
   plot_start = function(data, year, month, cap){
-    pldata = na.omit(data[which(index(data)==paste0(year,'-',month,'-','01')):nrow(data), ])
+    pldata = na.omit(data[which(index(data)==paste0(year,'-',month,'-','01')):nrow(data)])
     p = plot.xts(pldata, main = cap)
     p
   }
@@ -50,21 +62,17 @@ event = function(data, var_name,
   ev_month = as.character(substr(event_date, 1, 3))
   event_month = as.numeric(ifelse(match(ev_month, month.abb)<10, 
                                   paste0('0',match(ev_month, month.abb)), match(ev_month, month.abb)))
-  CapStr <- function(y) {
-    c <- strsplit(y, " ")[[1]]
-    paste(toupper(substring(c, 1,1)), substring(c, 2),
-          sep="", collapse=" ")
-  }
+  par(mfrow=c(1,1))
   if(level == 'levels'){
-    plot_start(data[, var_name], year, month, paste0(CapStr(names(data)),' (Nivel)'))
+    plot_start(data, year, month, paste0(var_name,' (Nivel)'))
     addEventLines(events = xts(c(event_label),  
-                               order.by = as.Date(c(paste0(event_year,'-',event_month,'-','01')))),
-                  lty = 2, col = 'red', lwd = 3, on = 0, pos=3)
+          order.by = as.Date(c(paste0(event_year,'-',event_month,'-','01')))),
+                  lty = ltyy, col = coll, lwd = lwdd, on = onn, pos=poss)
   } else if(level == 'first_diff'){
-    plot_start(diff(data[, var_name]), year, month, paste0(CapStr(names(data)),' (Primera Diferencia)'))
+    plot_start(diff(data), year, month, paste0(var_name,' (Primera Diferencia)'))
     addEventLines(events = xts(c(event_label), 
-                               order.by = as.Date(c(paste0(event_year,'-',event_month,'-','01')))),
-                  lty = 2, col = 'red', lwd = 3, on = 0, pos=3)
+          order.by = as.Date(c(paste0(event_year,'-',event_month,'-','01')))),
+                  lty = ltyy, col = coll, lwd = lwdd, on = onn, pos=poss)
   }
 }
 
@@ -75,15 +83,15 @@ acfs = function(data, dif='levels', lagmax){
     par(mfrow=c(2,1))
     a=acf(na.omit(data), lag.max = lagmax, plot = F)
     p=pacf(na.omit(data), lag.max = lagmax, plot = F)
-    pa=plot(a, main = paste0('ACF of ', CapStr(names(data)), ' (Levels)'))
-    pp=plot(p, main = paste0('PACF of ', CapStr(names(data)), ' (Levels)'))
+    pa=plot(a, main = paste0('ACF of ', names(data), ' (Levels)'), ylab='')
+    pp=plot(p, main = paste0('PACF of ', names(data), ' (Levels)'), ylab='')
     return(c(pa,pp))
   } else if(dif=='first_diff'){
     par(mfrow=c(2,1))
     a=acf(na.omit(diff(data)), lag.max = lagmax, plot = F)
     p=pacf(na.omit(diff(data)), lag.max = lagmax, plot = F)
-    pa=plot(a, main = paste0('ACF of ', CapStr(names(data)), ' (First Difference)'))
-    pp=plot(p, main = paste0('PACF of ', CapStr(names(data)), ' (First Difference)'))  
+    pa=plot(a, main = paste0('ACF of ', names(data), ' (First Difference)'), ylab='')
+    pp=plot(p, main = paste0('PACF of ', names(data), ' (First Difference)'), ylab='')  
     return(c(pa,pp))
   }
 }
@@ -92,13 +100,13 @@ acfs = function(data, dif='levels', lagmax){
 distacf = function(data, var_name, dif='levels', lagmax){
   if(dif=='levels'){
     par(mfrow=c(2,1))
-    a=acf(data, lag.max = lagmax, plot = F)
+    a=acf(na.omit(data), lag.max = lagmax, plot = F)
     plot(a, main = paste0('ACF of ', var_name, ' (Levels)'))
-    hist(as.numeric(data), probability = T, 
+    hist(as.numeric(na.omit(data)), probability = T, 
          main = paste0('Histogram of ', var_name))
-    lines(density(as.numeric(data)), col='red')
+    lines(density(as.numeric(na.omit(data))), col='red')
   } else if(dif=='first_diff'){
-    par(mfrow=c(2,1))
+    par(mfrow=c(2,1)) 
     difdat=na.omit(diff(data))
     pa=acf(difdat, lag.max = lagmax, plot = F)
     plot(pa, main = paste0('ACF of ',
@@ -125,6 +133,7 @@ fitted_actual = function(data, mod, start_date,
                                paste0('0',match(nd_month, month.abb)), match(nd_month, month.abb)))
   fitt=ts(fitted(mod)[which(as.yearmon(index(data))==start_date):nrow(data)],
           start = c(st_year, st_month), end = c(nd_year, nd_month), frequency = 12)
+  par(mfrow=c(1,1))
   p=plot(fitt, type = 'l', ylab='', xaxt='n', main = cap, lwd=2, pch=15)
   tsp = attributes(fitt)$tsp
   dates = seq(as.Date(paste0(st_year,'-','0',st_month,'-','01'),
@@ -139,5 +148,6 @@ fitted_actual = function(data, mod, start_date,
   legend("bottomleft", legend = c("Fitted", "Actual"),
          col = c('black', 'red'), lty=c(1,1), seg.len=1, lwd=4, pch=15)
 }
+
 
 
