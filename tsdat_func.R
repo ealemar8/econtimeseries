@@ -4,12 +4,17 @@
 # (want to reshape big year month matrix to long dataframe of two columns: 
 # one for month-year and one for the observation)
 
-## no quarter
-xts_yearmon = function(file_name, dir, var_name, yearmon=F){
+#### load directly from downloaded planning board file
+
+xts_yearmon = function(file_name, sheet_name, var_name, dir, yearmon=F){
   setwd(paste0("~/", dir))
-  dataa = read_excel(paste0('~/', dir, '/', file_name, '.xlsx'))
+  datad = read_excel(paste0('~/', dir, '/', file_name, '.xlsx'), sheet = sheet_name)
+  ind = which(datad[, 2]=='Meses')[1]
+  colnames(datad) <- as.character(datad[ind, ])
+  datad = datad[which(datad$Meses=='Julio')[1]:nrow(datad), -1]
   date = c('Jul', 'Aug', 'Sep', 'Oct', 'Nov',
            'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun')
+  dataa = datad[1:length(date), -ncol(datad)]
   dataa$Meses = date
   data = melt(dataa, id.vars = c('Meses'))
   names(data) = c('Meses', 'year', var_name)
@@ -34,18 +39,21 @@ xts_yearmon = function(file_name, dir, var_name, yearmon=F){
   }
   freq = length(date)
   elapsedm = abs(elapsed_months(start_year, start_month, end_year, end_month))
-    if(yearmon == T){
-      data = xts(data[(nrow(data)-elapsedm):nrow(data), var_name], 
-                 order.by = as.yearmon(index(ts(data[(nrow(data)-elapsedm):nrow(data), var_name], 
-                                                start = c(start_year,start_month), end = c(end_year, end_month),
-                                                frequency = freq))), frequency = freq)
-      names(data) = var_name
-      return(data)
-    } else { 
-      datat = xts(data[(nrow(data)-elapsedm):nrow(data), var_name], 
-                  order.by = seq(as.Date(paste0(start_year,'-',start_month,'-','01')),
-                                 length = elapsedm+1,
-                                 by = "months"), frequency = freq)
-      return(datat) = var_name
-    }
+  if(yearmon == T){
+    data = xts(data[(nrow(data)-elapsedm):nrow(data), var_name], 
+               order.by = as.yearmon(index(ts(data[(nrow(data)-elapsedm):nrow(data), var_name], 
+                                              start = c(start_year,start_month), end = c(end_year, end_month),
+                                              frequency = freq))), frequency = freq)
+    names(data) = c(var_name)
+    storage.mode(data) = 'numeric'
+    return(data)
+  } else { 
+    datat = xts(data[(nrow(data)-elapsedm):nrow(data), var_name], 
+                order.by = seq(as.Date(paste0(start_year,'-',start_month,'-','01')),
+                               length = elapsedm+1,
+                               by = "months"), frequency = freq)
+    names(datat) = c(var_name)
+    storage.mode(datat) = 'numeric'
+    return(datat)
+  }
 }
