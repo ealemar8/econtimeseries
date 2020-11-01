@@ -3,7 +3,7 @@
 
 
 # function to generate level and difference plot of an xts series
-graph_diflev = function(data, start_date, var_name, country){
+graph_diflev = function(data, start_date, var_name){
   start_year = as.numeric(substr(start_date,
                                  nchar(start_date)-4, nchar(start_date)))
   st_month = as.character(substr(start_date, 1, 3))
@@ -16,23 +16,23 @@ graph_diflev = function(data, start_date, var_name, country){
     trend = 1:nrow(data)
     data$line = fitted(lm(data ~ trend))
     p= plot(data[start_index:nrow(data), ], 
-            main = paste(var_name,'en', country, '(Nivel)'))
+            main = paste(var_name,'en', '(Nivel)'))
     pd = plot(diff(log(data[start_index:nrow(data), ])), 
-              main = paste(var_name,'en', country, '(Cambio %)'))
+              main = paste(var_name,'en', '(Cambio %)'))
   } else {
     start_index = which(index(data)
                         == paste0(start_year,'-', start_month, '-', '01'))
     trend = 1:nrow(data)
     data$line = fitted(lm(data ~ trend))
     p= plot(data[start_index:nrow(data), ], 
-            main = paste(var_name,'en', country, '(Nivel)'))
+            main = paste(var_name,'en', '(Nivel)'))
     pd = plot(diff(log(data[start_index:nrow(data), ])), 
-              main = paste(var_name,'en', country, '(Cambio %)'))
+              main = paste(var_name,'en', '(Cambio %)'))
   }
   return(c(p, pd))
 }
 
-graph_diflev(data = empleo_xts, start_date = 'Jul 2017', country = 'Puerto Rico')
+graph_diflev(data = empleo_xts, start_date = 'Jul 2017')
 
 # function for graphing from particular period to last pbservation 
 # (year and month provided in numbers)
